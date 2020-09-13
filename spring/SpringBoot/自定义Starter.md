@@ -2,7 +2,7 @@
 
 ## 背景
 
- 		Spring Boot大量使用了starter模式，比如`spring-boot-starter-redis`，`spring-boot-starter-jdbc`，`spring-boot-starter-data-jpa`，`spring-boot-starter-amqp` ，使用starter极大的简化了开发人员的配置 。
+​		 Spring Boot大量使用了starter模式，比如`spring-boot-starter-redis`，`spring-boot-starter-jdbc`，`spring-boot-starter-data-jpa`，`spring-boot-starter-amqp` ，使用starter极大的简化了开发人员的配置 。
 
 ​		有时，我们需要自研中间件，然后被其他项目依赖 ，为了做到对其他项目代码无污染入侵， 这个时候我们需要自定义starter，实现自动化配置，供其他项目依赖 。
 
@@ -10,7 +10,7 @@
 
 ### 1、模块：
 
- 		在springboot官方文档中，建议创建两个module ，其中一个是`autoconfigure module` ,一个是 `starter module` ，其中 `starter module `依赖 `autoconfigure module`。 
+​		 在springboot官方文档中，建议创建两个module ，其中一个是`autoconfigure module` ,一个是 `starter module` ，其中 `starter module `依赖 `autoconfigure module`。 
 
 ​		 不过，**如果不需要将自动配置代码和依赖项管理分离开来，则可以将它们组合到一个模块中**。 我们这里只创建一个module。
 
