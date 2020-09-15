@@ -20,26 +20,110 @@
 
 ## 注解详解
 
-- @ApiOperation：请求接口注解
-  - value
-  - notes
+-  @Api()用于类；  表示标识这个类是swagger的资源  ，如在Controller上添加
+
+  -  tags： 表示说明  
+
+  -  value ： 也是说明，可以使用tags替代  ， 但是tags如果有多个值，会生成多个list 
+
+    ``` java
+    @Api(value="用户controller",tags={"用户操作接口"})
+    @RestController
+    public class UserController {
+     
+    }
+    ```
+
+    效果：
+
+    ![API注释效果图.png](images/API注释效果图.png)
+
+- @ApiOperation： 用于方法； 表示一个http请求的操作  
+  
+  - value： 用于方法描述  
+  - notes： 用于提示内容  
+  -  tags：可以重新分组（视情况而用） 
   - httpMethod ：Http请求方式，分为`POST`和`GET`
-- @ApiParam：请求参数注解
-  - name
-  - value
+  
+- @ApiParam： 用于方法，参数，字段说明；  表示对参数的添加元数据（说明或是否必填等） 
+  - name： 参数名  
+  
+  - value： 参数说明  
+  
   - required：是否必须填写，默认是false
-- @ApiModel：对象注解
-  - value
-  - description
-- @ApiModelProperty：对象属性注解
-  - value：
+  
+    ```java
+    @Api(value="用户controller",tags={"用户操作接口"})
+    @RestController
+    public class UserController {
+         @ApiOperation(value="获取用户信息",notes="注意问题点")
+         @GetMapping("/getUserInfo")
+         public User getUserInfo(@ApiParam(name="id",value="用户id",required=true) Long id,@ApiParam(name="username",value="用户名") String username) {
+         // userService可忽略，是业务逻辑
+          User user = userService.getUserInfo();
+     
+          return user;
+      }
+    }
+    ```
+  
+- @ApiModel： 用于类 ； 表示对类进行说明，用于参数用实体类接收  
+  - value： 表示对象名  
+  - description： 描述  
+  
+- @ApiModelProperty： 用于方法，字段 ； 表示对model属性的说明或者数据操作更改  
+  - value： 字段说明  
+  
+  -  name：重写属性名字  
+  
+  -  dataType ： 重写属性类型 
+  
   - example：示例值
+  
   - required：是否必须填写，默认是false
-- 
+  
+  -  hidden ： 隐藏 
+  
+    ``` java
+    @ApiModel(value="user对象",description="用户对象user")
+    public class User implements Serializable{
+        private static final long serialVersionUID = 1L;
+         @ApiModelProperty(value="用户名",name="username",example="xingguo")
+         private String username;
+         @ApiModelProperty(value="状态",name="state",required=true)
+          private Integer state;
+          private String password;
+     
+          @ApiModelProperty(value="id数组",hidden=true)
+          private String[] ids;
+          private List<String> idList;
+         //省略get/set
+    }
+    ```
+  
+-  @ApiIgnore： 用于类，方法，方法参数 ； 表示这个方法或者类被忽略  
+
+- @ApiImplicitParam： 用于方法 ； 表示单独的请求参数  
+
+  -    name ：参数名
+  -   value ：参数说明
+  -   dataType ：数据类型
+  -   paramType ：参数类型
+  -   example ：举例说明
+
+-  @ApiImplicitParams ： 用于方法，包含多个 @ApiImplicitParam 
 
 ## 使用示例
 
 ### Controller层代码
+
+```java
+@Api(value="用户controller",tags={"用户操作接口"})
+@RestController
+public class UserController {
+ 
+}
+```
 
 ``` java
     @Override
