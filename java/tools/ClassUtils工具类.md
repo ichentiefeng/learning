@@ -14,8 +14,9 @@ public class ClassUtils {
 
     /**
      * 根据属性名获取该对象属性的字符串值
-     * @param fieldName
-     * @return
+     * @param obj 对象
+     * @param fieldName 属性名称
+     * @return 对象属性值
      */
     public static String  getFieldStringValue(Object obj,String fieldName){
         Object fieldValue=getFieldValue(obj,fieldName);
@@ -24,9 +25,9 @@ public class ClassUtils {
 
     /**
      * 根据属性名获取对象该属性的值
-     * @param obj
-     * @param fieldName
-     * @return
+     * @param obj 对象
+     * @param fieldName 属性名称
+     * @return 对象属性值
      */
     public static Object  getFieldValue(Object obj,String fieldName){
         Class  clazz=obj.getClass();
