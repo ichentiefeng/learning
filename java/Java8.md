@@ -416,6 +416,18 @@ public interface Consumer<T> {
 }
 ```
 
+##### 示例：
+
+``` java
+	public void test1(){
+		happy(10000, (m) -> System.out.println("去唱歌，每次消费：" + m + "元"));
+	} 
+	
+	public void happy(double money, Consumer<Double> con){
+		con.accept(money);
+	}
+```
+
 
 
 #### `Supplier<T>`
@@ -433,6 +445,30 @@ public interface Supplier<T> {
      */
     T get();
 }
+```
+
+##### 示例：
+
+```java
+	public void test2(){
+		List<Integer> numList = getNumList(10, () -> (int)(Math.random() * 100));
+		
+		for (Integer num : numList) {
+			System.out.println(num);
+		}
+	}
+	
+	//需求：产生指定个数的整数，并放入集合中
+	public List<Integer> getNumList(int num, Supplier<Integer> sup){
+		List<Integer> list = new ArrayList<>();
+		
+		for (int i = 0; i < num; i++) {
+			Integer n = sup.get();
+			list.add(n);
+		}
+		
+		return list;
+	}
 ```
 
 
@@ -467,6 +503,25 @@ public interface Function<T, R> {
     }
 }
 ```
+
+##### 示例
+
+```java
+	public void test3(){
+		String newStr = strHandler("\t\t\t 我陈铁锋很帅   ", (str) -> str.trim());
+		System.out.println(newStr);
+		
+		String subStr = strHandler("我陈铁锋很帅", (str) -> str.substring(2, 5));
+		System.out.println(subStr);
+	}
+	
+	//需求：用于处理字符串
+	public String strHandler(String str, Function<String, String> fun){
+		return fun.apply(str);
+	}
+```
+
+
 
 
 
@@ -510,13 +565,868 @@ public interface Predicate<T> {
 }
 ```
 
+示例
+
+```java
+	public void test4(){
+		List<String> list = Arrays.asList("Hello", "chentiefeng", "Lambda", "www", "ok");
+		List<String> strList = filterStr(list, (s) -> s.length() > 3);
+		
+		for (String str : strList) {
+			System.out.println(str);
+		}
+	}
+	
+	//需求：将满足条件的字符串，放入集合中
+	public List<String> filterStr(List<String> list, Predicate<String> pre){
+		List<String> strList = new ArrayList<>();
+		
+		for (String str : list) {
+			if(pre.test(str)){
+				strList.add(str);
+			}
+		}
+		
+		return strList;
+	}
+```
+
+### 其他函数式接口
+
+![](images/Java8内置的其他函数式接口.png)
 
 
 
+## 方法引用
 
-## 方法引用和构造器引用
+​		方法引用：若 Lambda 体中的功能，已经有方法提供了实现，可以使用方法引用。可以将方法引用理解为 Lambda 表达式的另外一种表现形式。
+
+方法引用主要有三种语法格式：
+
+- 对象 `:: `实例方法名
+- 类名 `:: `静态方法名
+- 类名 `:: `实例方法名
+
+注意：
+
+1. 方法引用所引用的方法的参数列表与返回值类型，需要与函数式接口中抽象方法的参数列表和返回值类型保持一致！
+
+2. 若Lambda 的参数列表的第一个参数，是实例方法的调用者，第二个参数(或无参)是实例方法的参数时，格式： ClassName::MethodName，如：
+
+   ```java
+   BiPredicate<String, String> bp = (x, y) -> x.equals(y);
+   ```
+
+   方法引用使用后：
+
+   ``` java
+   		BiPredicate<String, String> bp2 = String::equals;
+   		System.out.println(bp2.test("abc", "abc"));
+   ```
+
+### 对象`:: `实例方法名
+
+#### 示例1：Consumer
+
+```java
+		PrintStream ps = System.out;
+		//之前
+		Consumer<String> con = (str) -> ps.println(str);
+		con.accept("Hello World！");
+		
+		//方法引用使用之后
+		Consumer<String> con2 = ps::println;
+		con2.accept("Hello Java8！");
+		
+		//等价于
+		Consumer<String> con3 = System.out::println;
+```
+
+#### 示例2：Supplier
+
+``` java
+		Employee emp = new Employee(101, "张三", 18, 9999.99);
+		//之前
+		Supplier<String> sup = () -> emp.getName();
+		System.out.println(sup.get());
+		
+		//方法引用使用之后
+		Supplier<String> sup2 = emp::getName;
+		System.out.println(sup2.get());
+```
+
+### 类名 `:: `静态方法名
+
+#### 示例 1：Comparator
+
+``` java
+		//之前
+		Comparator<Integer> com = (x, y) -> Integer.compare(x, y);
+		
+		//方法引用后
+		Comparator<Integer> com2 = Integer::compare;
+```
+
+#### 示例2：BiFunction
+
+``` java
+		//之前
+		BiFunction<Double, Double, Double> fun = (x, y) -> Math.max(x, y);
+		System.out.println(fun.apply(1.5, 22.2));
+		
+		//方法引用使用之后
+		BiFunction<Double, Double, Double> fun2 = Math::max;
+		System.out.println(fun2.apply(1.2, 1.5));
+```
+
+### 类名 `:: `实例方法名
+
+#### 示例：BiPredicate
+
+``` java
+		//之前
+		BiPredicate<String, String> bp = (x, y) -> x.equals(y);
+		System.out.println(bp.test("abcde", "abcde"));
+		
+		//方法引用后
+		BiPredicate<String, String> bp2 = String::equals;
+		System.out.println(bp2.test("abc", "abc"));
+```
+
+
+
+## 构造器引用
+
+构造器引用 :构造器的参数列表，需要与函数式接口中参数列表保持一致！
+
+与函数式接口相结合，自动与函数式接口中方法兼容。
+可以把构造器引用赋值给定义的方法，与构造器参数列表要与接口中抽象方法的参数列表一致！
+
+语法格式： 类名 `::` new
+
+#### 示例：使用无参构造
+
+```java
+		//之前
+		Supplier<Employee> sup = () -> new Employee();
+		System.out.println(sup.get());
+		
+		//使用构造器引用后
+		Supplier<Employee> sup2 = Employee::new;
+		System.out.println(sup2.get());
+```
+
+#### 示例：使用带参构造
+
+``` java
+		Function<String, Employee> fun = Employee::new;
+		
+		BiFunction<String, Integer, Employee> fun2 = Employee::new;
+```
+
+## 数组引用
+
+格式： `type[] :: new`
+
+``` java
+		//之前
+		Function<Integer, String[]> fun = (args) -> new String[args];
+		String[] strs = fun.apply(10);
+		System.out.println(strs.length);
+		
+		//使用数组引用后
+		Function<Integer, Employee[]> fun2 = Employee[] :: new;
+		Employee[] emps = fun2.apply(20);
+		System.out.println(emps.length);
+```
+
+
 
 ## Stream API
+
+​		Stream 是 Java8 中处理集合的关键抽象概念，它可以指定你希望对集合进行的操作，可以执行非常复杂的查找、过滤和映射数据等操作。
+
+​		使用Stream API 对集合数据进行操作，就类似于使用 SQL 执行的数据库查询。也可以使用 Stream API 来并行执行操作。简而言之，Stream API 提供了一种高效且易于使用的处理数据的方式。
+
+### 什么是 Stream
+
+流(Stream)是数据渠道，用于操作数据源（集合、数组等）所生成的元素序列。
+
+集合讲的是数据，流讲的是计算！
+
+注意：
+
+- Stream 自己不会存储元素。
+- Stream 不会改变源对象。相反，他们会返回一个持有结果的新Stream。
+- Stream 操作是延迟执行的。这意味着他们会等到需要结果的时候才执行。
+
+### Stream 的操作三个步骤
+
+1、创建 Stream：一个数据源（如：集合、数组），获取一个流
+
+2、中间操作：一个中间操作链，对数据源的数据进行处理
+
+3、终止操作(终端操作)：一个终止操作，执行中间操作链，并产生结果
+
+#### 1、创建 Stream
+
+方式1：Collection 提供了两个方法  stream() 与 parallelStream()
+
+​		Java8 中的 Collection 接口被扩展，提供了两个获取流的方法：
+
+``` java
+default Stream<E> stream() : 返回一个顺序流
+default Stream<E> parallelStream() : 返回一个并行流
+```
+
+示例：
+
+```java
+		//获取一个顺序流
+		Stream<String> stream = list.stream();
+		//获取一个并行流
+		Stream<String> parallelStream = list.parallelStream(); 
+```
+
+方法2：通过 Arrays 中的静态方法 stream() 获取一个数组流
+
+``` java
+static <T> Stream<T> stream(T[] array): 返回一个流
+```
+
+示例：
+
+``` java
+		Integer[] nums = new Integer[10];
+		Stream<Integer> stream1 = Arrays.stream(nums);
+```
+
+方法3：通过 Stream 类中静态方法 of()
+
+可以使用静态方法` Stream.of()`, 通过显示值创建一个流。它可以接收任意数量的参数
+
+``` java
+public static<T> Stream<T> of(T... values) : 返回一个流
+```
+
+示例：
+
+```java
+Stream<Integer> stream2 = Stream.of(1,2,3,4,5,6);
+```
+
+方法4：创建无限流
+
+可以使用静态方法` Stream.iterate()` 和`Stream.generate()`, 创建无限流。
+
+``` java
+// 迭代
+public static<T> Stream<T> iterate(final T seed, final UnaryOperator<T> f) 
+// 生成
+public static<T> Stream<T> generate(Supplier<T> s) : 
+```
+
+示例：
+
+``` java
+		Stream<Integer> stream3 = Stream.iterate(0, (x) -> x + 2).limit(10);
+		stream3.forEach(System.out::println);
+```
+
+或者：
+
+``` java
+		Stream<Double> stream4 = Stream.generate(Math::random).limit(2);
+		stream4.forEach(System.out::println);
+```
+
+#### 2、Stream的中间操作
+
+多个中间操作可以连接起来形成一个流水线，除非流水线上触发终止操作，否则中间操作不会执行任何的处理！而在终止操作时一次性全部处理，称为“惰性求值”。
+
+##### 筛选与切片
+
+![](images/java8筛选与切片.png)
+
+示例1：filter
+
+``` java
+	List<Employee> emps = Arrays.asList(
+			new Employee(102, "李四", 59, 6666.66),
+			new Employee(101, "张三", 18, 9999.99),
+			new Employee(103, "王五", 28, 3333.33),
+			new Employee(104, "赵六", 8, 7777.77),
+			new Employee(104, "赵六", 8, 7777.77),
+			new Employee(104, "赵六", 8, 7777.77),
+			new Employee(105, "田七", 38, 5555.55)
+	);
+
+	//所有的中间操作不会做任何的处理
+		Stream<Employee> stream = emps.stream()
+			.filter((e) -> {
+				System.out.println("测试中间操作");
+				return e.getAge() <= 35;
+			});
+		
+		//只有当做终止操作时，所有的中间操作会一次性的全部执行，称为“惰性求值”
+		stream.forEach(System.out::println);
+```
+
+测试2：limit
+
+```  java
+		emps.stream()
+			.filter((e) -> {
+				System.out.println("短路！"); // &&  ||
+				return e.getSalary() >= 5000;
+			}).limit(3)
+			.forEach(System.out::println);
+```
+
+示例3：skip
+
+```java
+		emps.parallelStream()
+			.filter((e) -> e.getSalary() >= 5000)
+			.skip(2)
+			.forEach(System.out::println);
+```
+
+示例4：distinct
+
+```java
+		emps.stream()
+			.distinct()
+			.forEach(System.out::println);
+```
+
+注意：通过流所生成元素的 hashCode() 和 equals() 去除重复元素，所以需要元素重写hashCode() 和 equals() 。
+
+##### 映射
+
+![](images/java8映射.png)
+
+示例：map
+
+``` java
+		Stream<String> str = emps.stream()
+			.map(Employee::getName);
+
+		List<String> strList = Arrays.asList("aaa", "bbb", "ccc", "ddd", "eee");
+		
+		Stream<String> stream = strList.stream()
+			   .map(String::toUpperCase);
+		
+		stream.forEach(System.out::println);
+```
+
+示例：flatMap
+
+``` java
+	public static Stream<Character> filterCharacter(String str){
+		List<Character> list = new ArrayList<>();
+		
+		for (Character ch : str.toCharArray()) {
+			list.add(ch);
+		}
+		
+		return list.stream();
+	}
+
+		List<String> strList = Arrays.asList("aaa", "bbb", "ccc", "ddd", "eee");
+       //使用flatMap前
+		Stream<Stream<Character>> stream2 = strList.stream()
+			   .map(TestStreamAPI1::filterCharacter);  //{{}{}{}{}},类似add()
+		
+		stream2.forEach((sm) -> {
+			sm.forEach(System.out::println);
+		});
+
+		//使用flatMap后
+		Stream<Character> stream3 = strList.stream()
+			   .flatMap(TestStreamAPI1::filterCharacter); //{}类似addAll()
+		
+		stream3.forEach(System.out::println);
+```
+
+
+
+##### 排序
+
+![](images/java8排序.png)
+
+示例1：sorted()
+
+``` java
+	List<Employee> emps = Arrays.asList(
+			new Employee(102, "李四", 59, 6666.66),
+			new Employee(101, "张三", 18, 9999.99),
+			new Employee(103, "王五", 28, 3333.33),
+			new Employee(104, "赵六", 8, 7777.77),
+			new Employee(104, "赵六", 8, 7777.77),
+			new Employee(104, "赵六", 8, 7777.77),
+			new Employee(105, "田七", 38, 5555.55)
+	);
+
+		emps.stream()
+			.map(Employee::getName)
+			.sorted()
+			.forEach(System.out::println);
+```
+
+示例2：sorted(Compatrator)
+
+```java
+		emps.stream()
+			.sorted((x, y) -> {
+				if(x.getAge() == y.getAge()){
+					return x.getName().compareTo(y.getName());
+				}else{
+					return Integer.compare(x.getAge(), y.getAge());
+				}
+			}).forEach(System.out::println);
+```
+
+#### 3、终止操作
+
+终端操作会从流的流水线生成结果。其结果可以是任何不是流的值，例如：List、Integer，甚至是 void 。
+
+##### 查找与匹配
+
+![](images/java8终止操作之查找与匹配.png)
+
+
+![](images/java8终止操作之比较与遍历png.png)
+
+###### 示例1：allMatch
+
+```java
+	List<Employee> emps = Arrays.asList(
+			new Employee(102, "李四", 59, 6666.66, Status.BUSY),
+			new Employee(101, "张三", 18, 9999.99, Status.FREE),
+			new Employee(103, "王五", 28, 3333.33, Status.VOCATION),
+			new Employee(104, "赵六", 8, 7777.77, Status.BUSY),
+			new Employee(104, "赵六", 8, 7777.77, Status.FREE),
+			new Employee(104, "赵六", 8, 7777.77, Status.FREE),
+			new Employee(105, "田七", 38, 5555.55, Status.BUSY)
+        
+            boolean bl = emps.stream()
+				.allMatch((e) -> e.getStatus().equals(Status.BUSY));
+			
+			System.out.println(bl);//false
+```
+
+###### 示例2：anyMatch
+
+```java
+			boolean bl1 = emps.stream()
+				.anyMatch((e) -> e.getStatus().equals(Status.BUSY));
+			
+			System.out.println(bl1);//true
+```
+
+###### 示例3：noneMatch
+
+``` java
+			boolean bl2 = emps.stream()
+				.noneMatch((e) -> e.getStatus().equals(Status.BUSY));
+			
+			System.out.println(bl2);
+```
+
+###### 示例4：findFirst
+
+``` java
+		Optional<Employee> op = emps.stream()
+			.sorted((e1, e2) -> Double.compare(e1.getSalary(), e2.getSalary()))
+			.findFirst();
+		
+		System.out.println(op.get());
+```
+
+###### 示例5：findAny
+
+``` java
+		Optional<Employee> op2 = emps.parallelStream()
+			.filter((e) -> e.getStatus().equals(Status.FREE))
+			.findAny();
+		
+		System.out.println(op2.get());
+```
+
+###### 示例6：count总数
+
+``` java
+		long count = emps.stream()
+						 .filter((e) -> e.getStatus().equals(Status.FREE))
+						 .count();
+		
+		System.out.println(count);
+```
+
+###### 示例7：max最大
+
+``` java
+		Optional<Double> op = emps.stream()
+			.map(Employee::getSalary)
+			.max(Double::compare);
+		
+		System.out.println(op.get());
+```
+
+###### 示例8：min最小
+
+``` java
+		Optional<Employee> op2 = emps.stream()
+			.min((e1, e2) -> Double.compare(e1.getSalary(), e2.getSalary()));
+		
+		System.out.println(op2.get());
+```
+
+
+
+##### 归约
+
+![](images/java8终止操作之归约.png)
+
+备注：map 和 reduce 的连接通常称为 map-reduce 模式，因 Google 用它来进行网络搜索而出名。
+
+###### 示例1：reduce
+
+``` java
+		List<Integer> list = Arrays.asList(1,2,3,4,5,6,7,8,9,10);
+		
+		Integer sum = list.stream()
+			.reduce(0, (x, y) -> x + y);
+		
+		System.out.println(sum); //55
+```
+
+###### 示例2：reduce(BinaryOperator)
+
+``` java
+		Optional<Double> op = emps.stream()
+			.map(Employee::getSalary)
+			.reduce(Double::sum);
+		
+		System.out.println(op.get());
+```
+
+###### 示例3：搜索名字中 “六” 出现的次数
+
+``` java
+		Optional<Integer> sum = emps.stream()
+			.map(Employee::getName)
+			.flatMap(TestStreamAPI1::filterCharacter)
+			.map((ch) -> {
+				if(ch.equals('六'))
+					return 1;
+				else 
+					return 0;
+			}).reduce(Integer::sum);
+		
+		System.out.println(sum.get());
+```
+
+
+
+##### 收集
+
+![](images/java8终止操作之收集.png)
+
+collect——将流转换为其他形式。接收一个 Collector接口的实现，用于给Stream中元素做汇总的方法.
+
+Collector 接口中方法的实现决定了如何对流执行收集操作(如收集到 List、Set、Map)。但是 Collectors 实用类提供了很多静态方法，可以方便地创建常见收集器实例，具体方法与实例如下表：
+
+![](images/java8终止操作之收集Collectors1.png)
+
+![](images/java8终止操作之收集Collectors2.png)
+
+###### 示例1：Collectors.toList()
+
+``` java
+		List<String> list = emps.stream()
+			.map(Employee::getName)
+			.collect(Collectors.toList());
+		
+		list.forEach(System.out::println);
+```
+
+###### 示例2：Collectors.toSet()
+
+``` java
+		Set<String> set = emps.stream()
+			.map(Employee::getName)
+			.collect(Collectors.toSet());
+		
+		set.forEach(System.out::println);
+```
+
+###### 示例3：Collectors.toCollection(HashSet::new)
+
+``` java
+		HashSet<String> hs = emps.stream()
+			.map(Employee::getName)
+			.collect(Collectors.toCollection(HashSet::new));
+		
+		hs.forEach(System.out::println);
+```
+
+###### 示例4：总数Collectors.counting()
+
+``` java
+		Long count = emps.stream()
+			.collect(Collectors.counting());
+		
+		System.out.println(count);
+```
+
+###### 示例5：平均Collectors.averagingDouble
+
+``` java
+		Double avg = emps.stream()
+			.collect(Collectors.averagingDouble(Employee::getSalary));
+		
+		System.out.println(avg);
+```
+
+###### 示例6：总和Collectors.summingDouble
+
+``` java
+		Double sum = emps.stream()
+			.collect(Collectors.summingDouble(Employee::getSalary));
+```
+
+###### 示例7：最大Collectors.maxBy
+
+``` java
+		Optional<Double> max = emps.stream()
+			.map(Employee::getSalary)
+			.collect(Collectors.maxBy(Double::compare));
+		
+		System.out.println(max.get());
+```
+
+###### 示例8：最小Collectors.minBy
+
+``` java
+		Optional<Employee> op = emps.stream()
+			.collect(Collectors.minBy((e1, e2) -> Double.compare(e1.getSalary(), e2.getSalary())));
+		
+		System.out.println(op.get());
+```
+
+###### 示例9：收集summarizingDouble
+
+summarizingDouble可以将元素组成集合，然后可以做多种汇总操作。
+
+``` java
+		DoubleSummaryStatistics dss = emps.stream()
+			.collect(Collectors.summarizingDouble(Employee::getSalary));
+		
+		System.out.println(dss.getMax());
+		System.out.println(dss.getMin());
+		System.out.println(dss.getSum());
+```
+
+###### 示例10：分组groupingBy
+
+``` java
+		Map<Status, List<Employee>> map = emps.stream()
+			.collect(Collectors.groupingBy(Employee::getStatus));
+		
+		System.out.println(map);
+```
+
+###### 示例11：多级分组groupingBy
+
+``` java
+		Map<Status, Map<String, List<Employee>>> map = emps.stream()
+			.collect(Collectors.groupingBy(Employee::getStatus, Collectors.groupingBy((e) -> {
+				if(e.getAge() >= 60)
+					return "老年";
+				else if(e.getAge() >= 35)
+					return "中年";
+				else
+					return "成年";
+			})));
+		
+		System.out.println(map);
+```
+
+###### 示例12：分区partitioningBy
+
+满足条件的是一个区，不满足条件的是另一个区
+
+``` java
+		Map<Boolean, List<Employee>> map = emps.stream()
+			.collect(Collectors.partitioningBy((e) -> e.getSalary() >= 5000));
+		
+		System.out.println(map);
+```
+
+###### 示例13：连接Collectors.joining
+
+``` java
+		String str = emps.stream()
+			.map(Employee::getName)
+			.collect(Collectors.joining("," , "----", "----"));
+		
+		System.out.println(str);
+```
+
+注意：
+
+```java
+joining(CharSequence delimiter,CharSequence prefix,CharSequence suffix) 
+```
+
+###### 示例14：reducing
+
+``` java
+		Optional<Double> sum = emps.stream()
+			.map(Employee::getSalary)
+			.collect(Collectors.reducing(Double::sum));
+		
+		System.out.println(sum.get());
+```
+
+#### 示例：StreamAPI运用
+
+##### 示例1：给定一个数字列表，如何返回一个由每个数的平方构成的列表呢？
+
+``` java
+		Integer[] nums = new Integer[]{1,2,3,4,5};
+		
+		Arrays.stream(nums)
+			  .map((x) -> x * x)
+			  .forEach(System.out::println);
+```
+
+##### 示例2：怎样用 map 和 reduce 方法数一数流中有多少个Employee呢？
+
+``` java
+	List<Employee> emps = Arrays.asList(
+			new Employee(102, "李四", 59, 6666.66, Status.BUSY),
+			new Employee(101, "张三", 18, 9999.99, Status.FREE),
+			new Employee(103, "王五", 28, 3333.33, Status.VOCATION),
+			new Employee(104, "赵六", 8, 7777.77, Status.BUSY),
+			new Employee(104, "赵六", 8, 7777.77, Status.FREE),
+			new Employee(104, "赵六", 8, 7777.77, Status.FREE),
+			new Employee(105, "田七", 38, 5555.55, Status.BUSY)
+	);
+
+		Optional<Integer> count = emps.stream()
+			.map((e) -> 1)
+			.reduce(Integer::sum);
+		
+		System.out.println(count.get());
+```
+
+##### 示例3：交易员和交易示例
+
+``` java
+		Trader raoul = new Trader("Raoul", "Cambridge");
+		Trader mario = new Trader("Mario", "Milan");
+		Trader alan = new Trader("Alan", "Cambridge");
+		Trader brian = new Trader("Brian", "Cambridge");
+		
+		transactions = Arrays.asList(
+				new Transaction(brian, 2011, 300),
+				new Transaction(raoul, 2012, 1000),
+				new Transaction(raoul, 2011, 400),
+				new Transaction(mario, 2012, 710),
+				new Transaction(mario, 2012, 700),
+				new Transaction(alan, 2012, 950)
+		);
+```
+
+1. 找出2011年发生的所有交易， 并按交易额排序（从低到高）
+
+   ``` java
+   		transactions.stream()
+   					.filter((t) -> t.getYear() == 2011)
+   					.sorted((t1, t2) -> Integer.compare(t1.getValue(), t2.getValue()))
+   					.forEach(System.out::println);
+   ```
+
+2. 交易员都在哪些不同的城市工作过？
+
+   ``` java
+   	public void test2(){
+   		transactions.stream()
+   					.map((t) -> t.getTrader().getCity())
+   					.distinct()
+   					.forEach(System.out::println);
+   ```
+
+3. 查找所有来自剑桥的交易员，并按姓名排序
+
+   ``` java
+   		transactions.stream()
+   					.filter((t) -> t.getTrader().getCity().equals("Cambridge"))
+   					.map(Transaction::getTrader)
+   					.sorted((t1, t2) -> t1.getName().compareTo(t2.getName()))
+   					.distinct()
+   					.forEach(System.out::println);
+   ```
+
+4. 返回所有交易员的姓名字符串，按字母顺序排序
+
+   ``` java
+   		String str = transactions.stream()
+   					.map((t) -> t.getTrader().getName())
+   					.sorted()
+   					.reduce("", String::concat);
+   ```
+
+5. 有没有交易员是在米兰工作的？
+
+   ``` java
+   		boolean bl = transactions.stream()
+   					.anyMatch((t) -> t.getTrader().getCity().equals("Milan"));
+   		
+   		System.out.println(bl);
+   ```
+
+6. 打印生活在剑桥的交易员的所有交易额
+
+   ``` java
+   		Optional<Integer> sum = transactions.stream()
+   					.filter((e) -> e.getTrader().getCity().equals("Cambridge"))
+   					.map(Transaction::getValue)
+   					.reduce(Integer::sum);
+   		
+   		System.out.println(sum.get());
+   ```
+
+7. 所有交易中，最高的交易额是多少
+
+   ``` java
+   		Optional<Integer> max = transactions.stream()
+   					.map((t) -> t.getValue())
+   					.max(Integer::compare);
+   		
+   		System.out.println(max.get());
+   ```
+
+8. 找到交易额最小的交易
+
+   ``` java
+   		Optional<Transaction> op = transactions.stream()
+   					.min((t1, t2) -> Integer.compare(t1.getValue(), t2.getValue()));
+   		
+   		System.out.println(op.get());
+   ```
+
+   
+
+## 并行流与串行流
+
+​		**并行流就是把一个内容分成多个数据块，并用不同的线程分别处理每个数据块的流**。
+​		Java 8 中将并行进行了优化，我们可以很容易的对数据进行**并行操作**。Stream API 可以声明性地通过 **`parallel()`** 与**`sequential() `**在并行流与顺序流之间进行切换。
+
+可以参考：多线程的Fork/Join 框架
 
 ## 接口中的默认方法与静态方法
 
