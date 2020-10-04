@@ -1,4 +1,6 @@
-# Java8新特性
+```Java8新特性
+
+```
 
 ## 对Map优化
 
@@ -1421,24 +1423,427 @@ joining(CharSequence delimiter,CharSequence prefix,CharSequence suffix)
 
    
 
-## 并行流与串行流
+## 并行流
 
 ​		**并行流就是把一个内容分成多个数据块，并用不同的线程分别处理每个数据块的流**。
 ​		Java 8 中将并行进行了优化，我们可以很容易的对数据进行**并行操作**。Stream API 可以声明性地通过 **`parallel()`** 与**`sequential() `**在并行流与顺序流之间进行切换。
 
-可以参考：多线程的Fork/Join 框架
+可以参考：[多线程的Fork/Join 框架](https://github.com/ichentiefeng/learning/blob/master/java/java%E5%A4%9A%E7%BA%BF%E7%A8%8B.md#forkjoin-%E6%A1%86%E6%9E%B6)
+
+### 示例：Java8并行流
+
+```java
+		Long sum = LongStream.rangeClosed(0L, 10000000000L)
+							 .parallel()  //并行流
+							 .sum();
+		
+		System.out.println(sum);
+```
+
+
 
 ## 接口中的默认方法与静态方法
 
+### 接口中的默认方法
+
+Java 8中允许接口中包含具有具体实现的方法，该方法称为“默认方法”，默认方法使用 default 关键字修饰。
+
+``` java
+public interface MyFun {
+	
+	default String getName(){
+		return "陈铁锋";
+	}
+
+}
+```
+
+#### 接口默认方法的”类优先”原则
+
+若一个接口中定义了一个默认方法，而另外一个父类或接口中又定义了一个同名的方法时
+
+-  选择父类中的方法。如果一个父类提供了具体的实现，那么接口中具有相同名称和参数的默认方法会被忽略。
+- 接口冲突。如果一个父接口提供一个默认方法，而另一个接口也提供了一个具有相同名称和参数列表的方法（不管方法是否是默认方法），那么必须覆盖该方法来解决冲突
+
+
+
+### 接口中的静态方法
+
+Java8 中，接口中允许添加静态方法。
+
+``` java
+public interface MyInterface {
+	
+	default String getName(){
+		return "呵呵呵";
+	}
+	
+	public static void show(){
+		System.out.println("接口中的静态方法");
+	}
+
+}
+```
+
 ## 新时间日期API
+
+###  LocalDate、LocalTime、LocalDateTime
+
+使用 LocalDate、LocalTime、LocalDateTime
+
+LocalDate、LocalTime、LocalDateTime 类的实例是不可变的对象，分别表示使用 ISO-8601日历系统的日期、时间、日期和时间。它们提供了简单的日期或时间，并不包含当前的时间信息。也不包含与时区相关的信息。
+
+注：ISO-8601日历系统是国际标准化组织制定的现代公民的日期和时间的表示法
+
+![](images/java8新日期api.png)
+
+#### 示例1：该实例可以解决SimpleDateFormat的转换线程安全问题
+
+``` java
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyyMMdd");
+		
+		Callable<LocalDate> task = new Callable<LocalDate>() {
+
+			@Override
+			public LocalDate call() throws Exception {
+				LocalDate ld = LocalDate.parse("20161121", dtf);
+				return ld;
+			}
+			
+		};
+
+		ExecutorService pool = Executors.newFixedThreadPool(10);
+		
+		List<Future<LocalDate>> results = new ArrayList<>();
+		
+		for (int i = 0; i < 10; i++) {
+			results.add(pool.submit(task));
+		}
+		
+		for (Future<LocalDate> future : results) {
+			System.out.println(future.get());
+		}
+		
+		pool.shutdown();
+```
+
+#### 示例2：LocalDateTime
+
+``` java
+		LocalDateTime ldt = LocalDateTime.now();
+		System.out.println(ldt);
+		
+		LocalDateTime ld2 = LocalDateTime.of(2016, 11, 21, 10, 10, 10);
+		System.out.println(ld2);
+		
+		LocalDateTime ldt3 = ld2.plusYears(20);
+		System.out.println(ldt3);
+		
+		LocalDateTime ldt4 = ld2.minusMonths(2);
+		System.out.println(ldt4);
+		
+		System.out.println(ldt.getYear());
+		System.out.println(ldt.getMonthValue());
+		System.out.println(ldt.getDayOfMonth());
+		System.out.println(ldt.getHour());
+		System.out.println(ldt.getMinute());
+		System.out.println(ldt.getSecond());
+```
+
+### Instant 时间戳
+
+Instant 用于“时间戳”的运算。它是以Unix元年(传统的设定为UTC时区1970年1月1日午夜时分)开始所经历的描述进行运算。
+
+示例：
+
+``` java
+		Instant ins = Instant.now();  //默认使用 UTC 时区
+		System.out.println(ins);
+		
+		//东8区
+		OffsetDateTime odt = ins.atOffset(ZoneOffset.ofHours(8));
+		System.out.println(odt);
+		
+		System.out.println(ins.getNano());
+		
+		Instant ins2 = Instant.ofEpochSecond(5);
+		System.out.println(ins2);
+```
+
+### Duration 和 Period
+
+- Duration:用于计算两个“时间”间隔
+
+- Period:用于计算两个“日期”间隔
+
+#### 示例：Duration
+
+``` java
+		Instant ins1 = Instant.now();
+		
+		System.out.println("--------------------");
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+		}
+		
+		Instant ins2 = Instant.now();
+		
+		System.out.println("所耗费时间为：" + Duration.between(ins1, ins2).toMillis());
+```
+
+####  示例2：Period
+
+``` java
+		LocalDate ld1 = LocalDate.now();
+		LocalDate ld2 = LocalDate.of(2011, 1, 1);
+		
+		Period pe = Period.between(ld2, ld1);
+		System.out.println(pe.getYears());
+		System.out.println(pe.getMonths());
+		System.out.println(pe.getDays());
+```
+
+
+
+### 日期的操纵
+
+- TemporalAdjuster : 时间校正器。有时我们可能需要获取例如：将日期调整到“下个周日”等操作。
+
+- TemporalAdjusters : 该类通过静态方法提供了大量的常用 TemporalAdjuster 的实现。
+
+例如获取下个周日：
+
+``` java
+		LocalDate nextSunday=LocalDate.now().with(
+				TemporalAdjusters.next(DayOfWeek.SUNDAY)
+		);
+```
+
+#### 示例：下一个工作日
+
+```java
+		LocalDateTime ldt = LocalDateTime.now();
+		//自定义：下一个工作日
+		LocalDateTime ldt5 = ldt.with((l) -> {
+			LocalDateTime ldt4 = (LocalDateTime) l;
+			
+			DayOfWeek dow = ldt4.getDayOfWeek();
+			
+			if(dow.equals(DayOfWeek.FRIDAY)){
+				return ldt4.plusDays(3);
+			}else if(dow.equals(DayOfWeek.SATURDAY)){
+				return ldt4.plusDays(2);
+			}else{
+				return ldt4.plusDays(1);
+			}
+		});
+		
+		System.out.println(ldt5);
+```
+
+### 解析与格式化
+
+java.time.format.DateTimeFormatter 类：该类提供了三种格式化方法：
+
+- 预定义的标准格式
+- 语言环境相关的格式
+- 自定义的格式
+
+示例：
+
+``` java
+		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy年MM月dd日 HH:mm:ss E");
+		
+		LocalDateTime ldt = LocalDateTime.now();
+		String strDate = ldt.format(dtf);
+		
+		System.out.println(strDate);
+		
+		LocalDateTime newLdt = ldt.parse(strDate, dtf);
+		System.out.println(newLdt);
+```
+
+
+
+### 时区的处理
+
+Java8 中加入了对时区的支持，带时区的时间为分别为：ZonedDate、ZonedTime、ZonedDateTime
+
+其中每个时区都对应着 ID，地区ID都为 “{区域}/{城市}”的格式
+例如 ：Asia/Shanghai 等
+
+- `ZoneId`：该类中包含了所有的时区信息
+- `getAvailableZoneIds()` : 可以获取所有时区时区信息
+- `of(id)` : 用指定的时区信息获取 ZoneId 对象
+
+#### 示例：获取所有时区
+
+``` java
+		Set<String> set = ZoneId.getAvailableZoneIds();
+		set.forEach(System.out::println);
+```
+
+#### 示例：指定时区
+
+``` java
+		LocalDateTime ldt = LocalDateTime.now(ZoneId.of("Asia/Shanghai"));
+		System.out.println(ldt);
+		
+		ZonedDateTime zdt = ZonedDateTime.now(ZoneId.of("US/Pacific"));
+		System.out.println(zdt);
+```
+
+
+
+### 与传统日期处理的转换
+
+![](images/java8新日期与传统日期的转换api.png)
+
+
+
+
 
 ## Optional
 
 Optional用于最大化的减少空指针异常。
 
+`Optional<T> `类(`java.util.Optional`) 是一个容器类，代表一个值存在或不存在，原来用 null 表示一个值不存在，现在 Optional 可以更好的表达这个概念。并且可以避免空指针异常。
+
+常用方法:
+
+- Optional.of(T t) : 创建一个 Optional 实例
+- Optional.empty() : 创建一个空的 Optional 实例
+- Optional.ofNullable(T t):若 t 不为 null,创建 Optional 实例,否则创建空实例
+- isPresent() : 判断是否包含值
+- orElse(T t) :  如果调用对象包含值，返回该值，否则返回t
+- orElseGet(Supplier s) :如果调用对象包含值，返回该值，否则返回 s 获取的值
+- map(Function f): 如果有值对其处理，并返回处理后的Optional，否则返回 Optional.empty()
+- flatMap(Function mapper):与 map 类似，要求返回值必须是Optional
+
+### 示例1：Optional.of
+
+``` java
+		Optional<Employee> op = Optional.of(new Employee(101, "张三", 18, 9999.99));
+
+		System.out.println(op.get());
+```
+
+### 示例2：Optional.empty() 
+
+``` java
+		Optional<Employee> op =Optional.empty() ;//创建一个空的 Optional 实例
+		
+		System.out.println(op.get());
+```
+
+### 示例3：Optional.ofNullable(T t)
+
+``` java
+		Optional<Employee> op = Optional.ofNullable(new Employee(101, "张三", 18, 9999.99));  //若 t 不为 null,创建 Optional 实例,否则创建空实例
+
+		System.out.println(op);
+```
+
+### 示例4：isPresent()
+
+``` java
+		Optional<Employee> op = Optional.ofNullable(new Employee());
+		
+		if(op.isPresent()){ //判断是否包含值
+			System.out.println(op.get());
+		}
+```
+
+### 示例5：orElse(T t)
+
+``` java
+		Optional<Employee> op = Optional.ofNullable(new Employee());
+		Employee emp = op.orElse(new Employee("张三"));//如果调用对象包含值，返回该值，否则返回t
+		System.out.println(emp);
+```
+
+### 示例6：orElseGet(Supplier s)
+
+``` java
+		Optional<Employee> op = Optional.ofNullable(new Employee());
+		
+		//如果调用对象包含值，返回该值，否则返回 s 获取的值
+		Employee emp2 = op.orElseGet(() -> new Employee());
+		System.out.println(emp2);
+```
+
+### 示例7：map(Function f)
+
+``` java
+		Optional<Employee> op = Optional.of(new Employee(101, "张三", 18, 9999.99));
+		
+		//如果有值对其处理，并返回处理后的Optional，否则返回 Optional.empty()
+		Optional<String> op2 = op.map(Employee::getName);
+		System.out.println(op2.get());
+```
+
+### 示例8：flatMap(Function mapper)
+
+``` java
+		Optional<Employee> op = Optional.of(new Employee(101, "张三", 18, 9999.99));
+		
+		//与 map 类似，要求返回值必须是Optional
+		Optional<String> op3 = op.flatMap((e) -> Optional.of(e.getName()));
+		System.out.println(op3.get());
+```
 
 
-## 其他特性
+
+## 注解新增
+
+### 重复注解
+
+示例：
+
+注解：
+
+``` java
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+@Repeatable(TestAnnotations.class)
+public @interface TestAnnotation {
+    String value();
+}
+```
+
+注解容器：
+
+``` java
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER})
+@Retention(RetentionPolicy.RUNTIME)
+public @interface TestAnnotations {
+    TestAnnotation[] value();
+}
+```
+
+使用注解的方法：
+
+``` java
+    @TestAnnotation("chen")
+    @TestAnnotation("tie")
+    public void testDo(@TestAnnotation("feng") String name) {
+        System.out.println(name);
+    }
+```
+
+测试获取注解
+
+``` java
+        Class<DoTestAnnotation> clazz=DoTestAnnotation.class;
+        Method method=clazz.getMethod("testDo", String.class);
+        TestAnnotation[] annotations=method.getAnnotationsByType(TestAnnotation.class);
+        Arrays.stream(annotations).forEach((e)->System.out.println(e.value()));
+        Annotation[][]  parameterAnnotations=method.getParameterAnnotations();
+        Arrays.stream(parameterAnnotations).forEach((e)-> Arrays.stream(e).forEach(System.out::println));
+```
+
+### 类型注解
 
 
 
