@@ -400,6 +400,8 @@ public class CustomClassLoader extends ClassLoader {
 
 ![](images/JVM-类加载-类的主动使用和被动使用.png)
 
+## 运行时数据区
+
 
 
 # 字节码与类的加载篇

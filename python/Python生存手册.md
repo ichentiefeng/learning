@@ -889,6 +889,585 @@ for item in pic_urls:
     i += 1
 ```
 
+# Python读取配置文件
+
+参考： https://mp.weixin.qq.com/s?__biz=MzU1OTI0NjI1NQ==&mid=2247486592&idx=1&sn=78718ab892a8e22b8ac334ed773f450d&chksm=fc1b7240cb6cfb56884827ab62f2c403fb733a24dd25d1dae2d16dd6c18e259389a838c94f15&scene=126&sessionid=1602035721&key=1394210e71e96a226a13d2cb12844a0033fec0b8986d767289fe9d44481b74c515cd88fcdc51a348def4f06b2563d95640d749ea60be73bf9edddbef4ab9ffcbec2b8daa2a07d5d1c375d219bad20b98c01dd12bf3cdd8cb90d51cf50b42bd374de767b8578cfb13e25df0a98010837312fa5c7aba0a9460aab894f2bc81780f&ascene=1&uin=MTQxMzIwMDI4Mg%3D%3D&devicetype=Windows+10+x64&version=62090538&lang=zh_CN&exportkey=AYSjogrvWAR1PLp0Zoz4fgg%3D&pass_ticket=ogGQgS6L2jMXeiqZKeAnUzATDV%2BPmfHAs6dQa94MPXFNPm2PRJ%2FKBKKXrTXpKYI8&wx_header=0 
+
+​		在实际项目中，经常会接触到各种各样的配置文件，它可以增强项目的可维护性，常用配件文件的处理方式，包含：JSON、ini / config、YAML、XML 等。
+
+## JSON
+
+Python 内置了 JSON 模块，可以非常方便操作 JSON 数据
+
+常见的 4 个方法分别是：
+
+- json.load(json_file)
+
+  解析 JSON 文件，转换为 Python 中对应的数据类型
+
+- json.loads(json_string)
+
+  解析 JSON 格式的字符串，结果为 Python 中的字典
+
+- json.dump(python_content,file_path)
+
+  将 Python 数据，包含：dict、list 写入到文件中
+
+- json.dumps(python_dict)
+
+  将 Python 中 dict 转为 JSON 格式的字符串
+
+以下面这段 JSON 配置文件为例：
+
+```json
+#config.json
+{
+  "mysql": {
+    "host": "198.0.0.1",
+    "port": 3306,
+    "db": "xh",
+    "username": "root",
+    "password": "123456",
+    "desc": "Mysql配置文件"
+  }
+}
+```
+
+### 1、读取配置文件
+
+读取配置文件有两种方式，分别是：
+
+使用 json.load() 直接读取配置文件
+
+或者，先读取配置文件中的内容，然后使用 json.loads() 转换为 Python 数据类型
+
+需要指出的是，面对复杂层级的 JSON 配置文件，可以利用 jsonpath 进行读取；jsonpath 类似于 xpath，可以通过正则表达式快速读取数据
+
+```python
+import json
+
+def read_json_file(file_path):
+    """
+    读取json文件
+    :param file_path:
+    :return:
+    """
+    with open(file_path, 'r', encoding='utf-8') as file:
+
+        # 读取方式二选一
+        # 方式一
+        result = json.load(file)
+
+        # 方式二
+        # result = json.loads(file.read())
+
+        # 解析数据
+        host_mysql = result['mysql']['host']
+        port_mysql = result['mysql']['port']
+        db = result['mysql']['db']
+
+        print('Mysql地址：', host_mysql, ",端口号:", port_mysql, ",数据库:", db)
+
+    return result
+```
+
+### 2、保存配置文件
+
+使用 json 中的 json.dump() 方法，可以将一个字典写入到 JSON 文件中
+
+```python
+def write_content_to_json_file(output_file, content):
+    """
+    写入到json文件中
+    :param output_file:
+    :param content:
+    :return:
+    """
+    with open(output_file, 'w') as file:
+        # 写入到文件中
+        # 注意：为了保证中文能正常显示，需要设置ensure_ascii=False
+        json.dump(content, file, ensure_ascii=False)
+
+content_dict = {
+    'mysql': {
+        'host': '127.0.0.1',
+        'port': 3306,
+        'db': 'xh',
+        'username': 'admin',
+        'password': '123456',
+        'desc': 'Mysql数据库'
+    }
+}
+
+write_content_to_json_file('./output.json', content_dict)
+```
+
+### 3、修改配置文件
+
+如果需要修改配置文件，只需要先从配置文件中读出内容，然后修改内容，最后将修改后的内容保存的配置文件中即可
+
+```python
+def modify_json_file():
+    """
+    修改json配置文件
+    :return:
+    """
+    result = read_json_file('./config.json')
+
+    # 修改
+    result['mysql']['host'] = '198.0.0.1'
+
+    write_content_to_json_file('./config.json', result)
+```
+
+## ini/config
+
+ini 配置文件和 config 配置文件的解析方式类似，仅仅是文件后缀不一致
+
+这里我们以 ini 配置文件为例：
+
+``` ini
+# config.ini
+[mysql]
+host = 139.199.1.1
+username = root
+password = 123456
+port = 3306
+```
+
+ini 文件由 3 部分组成，分别是：节点（Section）、键（Key）、值（Value）
+
+常见的 Python 处理 ini 文件有两种方式，包含：
+
+- 使用内置的 configparser 标准模块
+- 使用 configobj 第三方依赖库
+
+我们先来看看内置的 configparser 模块
+
+###  1.1、读取配置文件
+
+ 实例化一个 ConfigParser 解析对象，使用 read() 方法读取 ini 配置文件 
+
+``` python
+from configparser import ConfigParser
+
+# 实例化解析对象
+cfg = ConfigParser()
+
+# 读取ini文件内容
+cfg.read(file_path)
+```
+
+ 使用 sections() 函数，可以获取所有的节点列表 
+
+``` python
+# sections() 得到所有的section，并以列表的形式返回
+sections = cfg.sections()
+print(sections)
+```
+
+ 要获取某一个节点下的所有键，可以使用 options(section_name) 函数 
+
+``` python
+# 获取某一个区域的所有key
+# cfg.options(section_name)
+keys = cfg.options('mysql')
+print(keys)
+```
+
+ 通过 items(section_name) 函数，可以获取某一个节点下的所有键值对 
+
+``` python
+# 获取某一个区域下的键值对
+items = cfg.items("mysql")
+print(items)
+```
+
+ 如果要获取某一个节点下，某一个键下的值，使用 get(section_name,key_name) 函数即可 
+
+``` python
+# 读取某一个区域下的某一个键值
+host = cfg.get("mysql", "host")
+print(host)
+```
+
+### 1.2、写入配置文件
+
+和读取配置文件类似，需要先实例化一个 ConfigParser 解析对象
+
+首先，使用 add_section(section_name) 函数添加一个节点
+
+```python
+# 加入节点和键值对
+# 添加一个节点
+cfg.add_section("redis")
+```
+
+然后，就可以使用 set(section_name,key,value) 函数往某一个节点添加键值对
+
+```python
+# 往节点内，添加键值对
+cfg.set("redis", "host", "127.0.0.1")
+cfg.set("redis", "port", "12345")
+```
+
+最后，使用 write() 函数写入到配置文件中去
+
+```python
+# 写入到文件中
+cfg.write(open('./raw/output.ini', 'w'))
+```
+
+### 1.3、修改配置文件
+
+修改配置文件的步骤是，读取配置文件，然后通过 set(section_name,key,value) 进行修改操作，最后使用 write() 函数写入到文件中即可
+
+```python
+def modify_ini_file(file_path):
+    """
+    修改ini文件
+    :return:
+    """
+    cfg.read(file_path)
+
+    cfg.set("mysql", "host", "139.199.11.11")
+
+    # 写入
+    cfg.write(open(file_path, "w"))
+```
+
+接着，我们聊聊使用 configobj 操作 ini 配置文件的流程
+
+首先安装 configobj 依赖库
+
+```shell
+# 依赖# pip3 install configobj
+```
+
+### 2.1、读取配置文件
+
+ 直接将 ini 配置文件路径作为参数，使用 ConfigObj 类构造一个对象 
+
+``` python
+from configobj import ConfigObj
+
+# 实例化对象
+config = ConfigObj(file_path, encoding='UTF8')
+```
+
+ 查看源码可以发现，ConfigObj 是 Section 节点的子类，而 Section 是 Dict 字典的子类 , 所以，可以直接通过键名 Key 获取节点和键值 。
+
+``` python
+# <class 'configobj.ConfigObj'>
+print(type(config))
+
+# <class 'configobj.Section'>
+print(type(config['mysql']))
+
+# 节点
+print(config['mysql'])
+
+# 某一个键对应的值
+print(config['mysql']
+```
+
+### 2.2、修改配置文件
+
+只需要读取配置文件，然后直接修改 ConfigObj 对象，最后使用 write() 方法，即可以达到修改配置文件的目的
+
+``` python
+def modify_ini_file(file_path):
+    """
+    修改ini文件
+    :param file_path:
+    :return:
+    """
+    # 读取配置文件
+    config = read_ini_file(file_path)
+
+    # 直接修改
+    config['mysql']['host'] = '139.199.1.1'
+
+    # 删除某个键值对
+    try:
+        del config['mysql']['db']
+    except Exception as e:
+        print('键不存在')
+        pass
+
+    # 写入
+    config.write()
+```
+
+### 2.3、 写入配置文件 
+
+写入配置文件，首先需要实例化一个 ConfigObj 对象，传入文件路径
+
+然后，设置节点、针对节点设置键值对
+
+最后，调用 write() 方法，写入到配置文件中
+
+``` python
+def write_to_ini_file(output):
+    """
+    写入到ini文件中
+    :param output:
+    :return:
+    """
+    config = ConfigObj(output, encoding='UTF8')
+    config['website'] = {}
+    config['website']['url'] = "www.baidu.com"
+    config['website']['name'] = "百度"
+
+    # 保存
+    config.write()
+```
+
+## YAML
+
+Python 操作 YAML 文件，常见的 2 种方式分别是：pyyaml、ruamel.yaml
+
+使用 pip 安装依赖
+
+``` shell
+# 安装依赖
+# 方式一
+pip3 install pyyaml
+
+# 方式二
+pip3 install ruamel.yaml
+```
+
+ 下面以一个简单的 YAML 配置文件为例，通过两种方式进行说明 
+
+``` yaml
+# 水果
+Fruits:
+  # 苹果
+  - Apple:
+      name: apple
+      price:  1
+      address:  广东
+  # 桔子
+  - Orange:
+      name: orange
+      price:  3
+      address:  湖南
+  # 香蕉
+  - Banana:
+      name: banana
+      price:  2
+      address:  海南
+```
+
+ 我们先来看看 pyyaml 
+
+### 1.1、读取配置文件 
+
+ 首先，读取配置文件，使用 yaml.safe_load() 加载数据，获取的数据类型是字典 
+
+``` python
+import yaml
+
+with open(file_path, "r") as file:
+    data = file.read()
+
+    # safe_load() 读取配置文件
+    # 结果数据类型：dict
+    result = yaml.safe_load(data)
+
+    print(result)
+```
+
+ 接着，就可以通过 YAML 配置文件的层级关系，获取键值 
+
+``` python
+# 3、获取yaml中的值
+name = result['Fruits'][0]['Apple']['name']
+price = result['Fruits'][0]['Apple']['price']
+address = result['Fruits'][0]['Apple']['address']
+print("名称:", name, ",price:", price, ",address:", address)
+```
+
+### 1.2、 写入配置文件 
+
+使用 YAML 中的 dump() 方法，可以将一个字典写入到 YAML 配置文件中
+
+需要注意的是，为了保证中文写入能正常显示，需要配置 allow_unicode=True
+
+``` python
+def write_to_yaml_file(content, file_path):
+    """
+    写入到yaml文件中
+    :param content:
+    :param file_path:
+    :return:
+    """
+
+    # 写入到文件中
+    with open(file_path, 'w', encoding='utf-8') as file:
+        yaml.dump(content, file, default_flow_style=False, encoding='utf-8', allow_unicode=True)
+
+# 定义一个字典
+content = {
+   "websites": [{"baidu": {'url': "www.baidu.com", 'name': '百度', "price": 100}},{"alibaba": {'url': "www.taobao.com", 'name': '淘宝', "price": 200}},{"tencent": {'url': "www.tencent.com", 'name': '腾讯', "price": 300}},]
+}
+
+write_to_yaml_file(content, "./raw/new.yaml")
+```
+
+### 1.3、 修改配置文件 
+
+ 和修改 ini 文件类型，先读取配置文件，然后修改字典中的内容，最后使用上面的写入方法，即可以达到修改配置文件的目的 
+
+``` python
+def modify_yaml_file():
+    """
+    修改yaml文件
+    :return:
+    """
+    content = read_yaml_file('./raw/norm.yaml')
+    print(content)
+
+    # 修改dict
+    content['Fruits'][0]['Apple']['price'] = 10086
+
+    # 重新写入到一个新的yaml文件中
+    write_to_yaml_file(content, './raw/output.yaml')
+```
+
+接着，我们来聊聊使用 ruamel 操作 YAML 配置文件的流程
+
+ruamel 是 pyyaml 的衍生版本，在传统 pyyaml 的基础上，增加了 RoundTrip 模式，保证 YAML 配置文件的读写顺序一致
+
+所以，在读取、修改、写入方式上和 pyyaml 类似
+
+### 2.1、读取配置文件
+
+``` python
+from ruamel import yaml
+
+def read_yaml_file(file_path):
+    """
+    读取yaml文件
+    :param file_path:
+    :return:
+    """
+    with open(file_path, 'r', encoding='utf-8') as file:
+        data = file.read()
+
+        # 解析yaml文件
+        # 类型：ordereddict
+        result = yaml.load(data, Loader=yaml.RoundTripLoader)
+
+        name = result['Fruits'][0]['Apple']['name']
+        price = result['Fruits'][0]['Apple']['price']
+        address = result['Fruits'][0]['Apple']['address']
+        print("名称:", name, ",price:", price, ",address:", address)
+
+    return result
+```
+
+###  2.2、写入配置文件 
+
+``` python
+def write_to_yaml_file(filepath, data):
+    """
+    写入到yaml文件中
+    :param filepath:
+    :param data:
+    :return:
+    """
+    with open(filepath, 'w', encoding='utf-8') as file:
+        yaml.dump(data, file, Dumper=yaml.RoundTripDumper, allow_unicode=True)
+```
+
+### 2.3、 修改配置文件 
+
+``` python
+def modify_yaml_file():
+    """
+    修改yaml文件
+    :return:
+    """
+    content = read_yaml_file('./raw/norm.yaml')
+
+    print(content)
+
+    # 修改dict
+    content['Fruits'][0]['Apple']['price'] = 10086
+
+    # 重新写入到一个新的yaml文件中
+    write_to_yaml_file('./raw/output.yaml', content)
+```
+
+## XML
+
+XML 作为一种标记语言，被用来设计存储和传输数据，很多项目经常使用 XML 作为配置文件和数据传输类型
+
+Python 内置的 xml 模块 可以很方便地处理 XML 配置文件
+
+以下面这段配置文件为例：
+
+``` xml
+<?xml version="1.0" encoding="utf-8"?>
+<dbconfig>
+    <mysql>
+        <host>127.0.0.1</host>
+        <port>3306</port>
+        <dbname>test</dbname>
+        <username>root</username>
+        <password>4355</password>
+    </mysql>
+</dbconfig>
+```
+
+ 首先，使用 xml.dom.minidom.parser(file_path) 解析配置文件，利用 documentElement 属性获取 XML 根节点 
+
+``` python
+import xml.dom.minidom
+
+# 读取配置文件
+dom = xml.dom.minidom.parse("./raw.xml")
+
+# 利用 documentElement 属性获取 XML 根节点
+# 根节点
+root = dom.documentElement
+```
+
+ 接着，使用 getElementsByTagName(tag_name) 方法，获取某一节点 
+
+``` python
+# 获取mysql节点
+node_mysql = root.getElementsByTagName('mysql')[0]
+```
+
+ 最后，使用 childNodes 属性，遍历节点的子 Node 节点，获取节点的名称和值 
+
+``` python
+# 遍历子节点，获取名称和值
+for node in node_mysql.childNodes:
+    # 节点类型
+    # 1：Element
+    # 2：Attribute
+    # 3：Text
+    # print(node.nodeType)
+    if node.nodeType == 1:
+        print(node.nodeName, node.firstChild.data)
+```
+
+# Python数据处理
+
+[聊聊 Python 数据处理全家桶（Mysql 篇）](http://mp.weixin.qq.com/s?__biz=MzU1OTI0NjI1NQ==&mid=2247486468&idx=2&sn=7c8cdfb478e5801496dad8b0ddf2061e&chksm=fc1b72c4cb6cfbd2e71861ddb8aa5d6c2ba3d4266ede047cfaf0558e6cd4e5b05a9ecca4dcdc&scene=21#wechat_redirect)
+
+[聊聊 Python 数据处理全家桶（Sqlite 篇）](http://mp.weixin.qq.com/s?__biz=MzU1OTI0NjI1NQ==&mid=2247486487&idx=1&sn=78b344b45366c4b8ffd195b2ce300191&chksm=fc1b72d7cb6cfbc106f1a820db3d0f7ee07f22f0a7af0525952fb82a9ed87ef00675a2c18b3a&scene=21#wechat_redirect)
+
+[聊聊 Python 数据处理全家桶（Redis 篇）](http://mp.weixin.qq.com/s?__biz=MzU1OTI0NjI1NQ==&mid=2247486517&idx=1&sn=01d43b1cd83c7caef94f06614fd42c02&chksm=fc1b72f5cb6cfbe39cef5a63b64c332c6b9cd2e329cc4373a72d460ca84d44e7637d5c6ae06b&scene=21#wechat_redirect)
+
+[聊聊 Python 数据处理全家桶（Memc 篇）](http://mp.weixin.qq.com/s?__biz=MzU1OTI0NjI1NQ==&mid=2247486553&idx=1&sn=06c97f43e68be307a6826e74ec126f29&chksm=fc1b7299cb6cfb8f8a6e99598327c240f9147dffeb79627d8848d465727ae8c3081e818b204d&scene=21#wechat_redirect)
+
+[聊聊 Python 数据处理全家桶（Mongo 篇）](http://mp.weixin.qq.com/s?__biz=MzU1OTI0NjI1NQ==&mid=2247486582&idx=2&sn=a1ec46619e543046994823d82df48dd7&chksm=fc1b72b6cb6cfba0a875a4931f4ce482307725076c285c6a3210a0e75b8082041ea17ae7abab&scene=21#wechat_redirect)
+
 # 爬虫
 
 ## requests的介绍与安装
