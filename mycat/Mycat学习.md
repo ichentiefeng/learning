@@ -97,7 +97,48 @@ yum install -y wget
 
 ### 安装Mycat-web
 
-Mycat-web需要依赖Zookeeper，所以我们先安装Zookeeper。
+Mycat-web需要依赖Zookeeper，所以我们需要先安装Zookeeper，参考：[Zookeeper离线安装](https://github.com/ichentiefeng/learning/blob/master/zookeeper/Zookeeper.md#%E7%A6%BB%E7%BA%BF%E5%AE%89%E8%A3%85)
+
+1. 下载
+
+   ```shell
+   wget http://dl.mycat.org.cn/mycat-web-1.0/Mycat-web-1.0-SNAPSHOT-20170102153329-linux.tar.gz
+   ```
+
+2. 解压
+
+   ```shell
+   tar -zxvf Mycat-web-1.0-SNAPSHOT-20170102153329-linux.tar.gz
+   ```
+
+3. 配置
+
+   ```shell
+   cd mycat-web/
+   vi mycat-web/WEB-INF/classes/mycat.properties
+   ```
+
+   修改zookeeper的地址：
+
+   ```properties
+   zookeeper=localhost:2181
+   ```
+
+4. 启动
+
+   ```shell
+   ./start.sh
+   ```
+
+5. 访问
+
+   可以通过浏览器访问：`http://IP地址:8082/mycat/`，我这里的测试地址是：http://192.168.56.150:8082/mycat/
+
+6. 配置
+
+   通过浏览器，访问到服务后，可以通过页面配置Mycat的服务地址，用来实现对Mycat的监控。
+
+
 
 
 
