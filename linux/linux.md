@@ -98,6 +98,14 @@ rsync    -rvl      $from_dir/$from_file        $to_user@$to_host:$to_dir/$to_fil
 rsync -rvl /usr/local/java  root@hadoop2:/usr/local/java
 ```
 
+## wget
+
+### centos安装：
+
+```shell
+yum install -y wget
+```
+
 
 
 # 问题解决
